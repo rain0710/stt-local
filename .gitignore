@@ -1,0 +1,21 @@
+# Claude
+.claude/
+
+# PyInstaller
+build/
+dist/
+*.spec.bak
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyd
+*.pyo
+
+# 日志与配置（本地运行产物）
+stt_local.log
+config.yaml
+
+# 虚拟环境
+.venv/
+venv/
