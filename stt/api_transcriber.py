@@ -29,11 +29,13 @@ PROVIDER_PRESETS = {
         "label": "硅基流动 SiliconFlow",
         "base_url": "https://api.siliconflow.cn/v1",
         "models": [
+            "XingChenAGI/XingChenASR-V3.2",
+            "XingChenAGI/XingChenASR-V3.2-Ultra",
+            "Qwen/Qwen3-ASR-1.7B",
             "FunAudioLLM/SenseVoiceSmall",
-            "TeleAI/TeleSpeechASR",
-            "whisper-large-v3",
+            "XingChenAGI/XingChenASR-Diarize-V3.0",
         ],
-        "console": "https://cloud.siliconflow.cn/account/ak",
+        "console": "https://cloud.siliconflow.cn/",
     },
     "openai": {
         "label": "OpenAI",
@@ -64,16 +66,22 @@ PROVIDER_PRESETS = {
 }
 
 DEFAULT_PROVIDER = "siliconflow"
-DEFAULT_MODEL = "FunAudioLLM/SenseVoiceSmall"
+DEFAULT_MODEL = "XingChenAGI/XingChenASR-V3.2"
 
 
 # ── 静态参考价（价格会变动，请以平台官网为准）────────────────────
 MODEL_PRICING = {
-    "FunAudioLLM/SenseVoiceSmall": "约 ¥0.014/分钟（曾有免费期）— 以官网为准",
-    "FunAudioLLM/SenseVoice":      "约 ¥0.014/分钟 — 以官网为准",
-    "TeleAI/TeleSpeechASR":        "低价 — 以官网为准",
-    "distil-whisper-large-v3-en":  "约 $0.02/小时 — 以官网为准",
+    # 硅基流动当前免费的语音识别模型（以官网为准）
+    "XingChenAGI/XingChenASR-V3.2-Ultra":  "免费（限时）— 以官网为准",
+    "XingChenAGI/XingChenASR-V3.2":        "免费（限时）— 以官网为准",
+    "XingChenAGI/XingChenASR-Diarize-V3.0": "免费（限时）— 说话人分离",
+    "XingChenAGI/XingChenGSR-V1.0":        "免费（限时）",
+    "Qwen/Qwen3-ASR-1.7B":                "免费（限时）— 以官网为准",
+    "FunAudioLLM/SenseVoiceSmall":        "免费（限时）— 以官网为准",
+    "FunAudioLLM/SenseVoice":             "免费（限时）— 以官网为准",
+    # 其他平台
     "whisper-large-v3-turbo":      "约 $0.04/小时 — 以官网为准",
+    "distil-whisper-large-v3-en":  "约 $0.02/小时 — 以官网为准",
     "whisper-large-v3":            "约 $0.111/小时（≈¥0.8/小时）— 以官网为准",
     "whisper-1":                   "约 $0.006/分钟（≈¥0.043/分钟）",
     "gpt-4o-transcribe":           "约 $0.006/分钟",
@@ -228,6 +236,10 @@ def query_balance(base_url: str, api_key: str, timeout: float = 10.0):
         logger.debug("余额查询失败: %s", e)
         return False, "网络错误，无法查询余额"
 
+    # 硅基流动已下线该接口（HTTP 410 / code 20092）
+    body = resp.text or ""
+    if resp.status_code == 410 or "deprecated" in body.lower() or "20092" in body:
+        return False, "该平台已下线余额查询接口，请到官网后台查看"
     if resp.status_code in (401, 403):
         return False, "API Key 无效或无权限"
     if resp.status_code == 404:

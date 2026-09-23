@@ -9,11 +9,15 @@ hiddenimports = [
     "pystray._win32",
 ]
 
+# 本地后端依赖：未安装时跳过（纯云端 API 模式不需要）
 for pkg in ("ctranslate2", "faster_whisper"):
-    d, b, h = collect_all(pkg)
-    datas    += d
-    binaries += b
-    hiddenimports += h
+    try:
+        d, b, h = collect_all(pkg)
+        datas    += d
+        binaries += b
+        hiddenimports += h
+    except Exception as exc:  # noqa: BLE001
+        print(f"[spec] skip {pkg}: {exc}")
 
 a = Analysis(
     ["main.py"],

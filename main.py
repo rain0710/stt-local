@@ -95,6 +95,15 @@ def _setup_logging():
     )
 
 
+def _has_faster_whisper() -> bool:
+    """未打包 faster-whisper 时（纯云端 API 构建）应默认使用云端后端。"""
+    try:
+        import importlib.util
+        return importlib.util.find_spec("faster_whisper") is not None
+    except Exception:
+        return False
+
+
 def _default_config() -> dict:
     has_cuda = _find_cuda_dir() is not None
     return {
@@ -102,7 +111,7 @@ def _default_config() -> dict:
         "modifier": "left_ctrl",
         "auto_send": False,
         "ui_language": "zh",
-        "backend": "local",
+        "backend": "local" if _has_faster_whisper() else "api",
         "whisper": {
             "model": "base",
             "language": "zh",

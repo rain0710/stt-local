@@ -1,4 +1,4 @@
-; STT Local — Inno Setup 安装脚本
+﻿; STT Local — Inno Setup 安装脚本
 
 [Setup]
 AppName=STT Local
@@ -126,11 +126,18 @@ begin
     'modifier: left_ctrl'               + #10 +
     'auto_send: false'                  + #10 +
     'ui_language: zh'                   + #10 +
+    'backend: api'                      + #10 +
     'whisper:'                          + #10 +
     '  model: base'                     + #10 +
     '  language: zh'                    + #10 +
     '  device: '      + Device          + #10 +
     '  compute_type: ' + ComputeType    + #10 +
+    'api:'                              + #10 +
+    '  provider: siliconflow'           + #10 +
+    '  base_url: https://api.siliconflow.cn/v1' + #10 +
+    '  api_key: ""'                    + #10 +
+    '  model: XingChenAGI/XingChenASR-V3.2' + #10 +
+    '  language: zh'                    + #10 +
     'audio:'                            + #10 +
     '  sample_rate: 16000'              + #10 +
     '  device: null'                    + #10;
