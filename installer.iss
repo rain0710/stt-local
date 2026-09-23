@@ -2,7 +2,7 @@
 
 [Setup]
 AppName=STT Local
-AppVersion=1.0.0
+AppVersion=1.1.0
 AppPublisher=Local Build
 AppId={{B8E4A7F3-2C1D-4E8B-9F5A-6D3E7C8B1A2F}
 DefaultDirName={localappdata}\stt_local
