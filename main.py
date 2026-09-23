@@ -60,6 +60,7 @@ import yaml
 from stt.hotkey import HotkeyListener
 from stt.recorder import AudioRecorder
 from stt.transcriber import Transcriber
+from stt.api_transcriber import ApiTranscriber, DEFAULT_MODEL, DEFAULT_PROVIDER
 from stt.injector import Injector
 from stt.tray import TrayIcon
 from stt.settings import open_settings_in_thread
@@ -72,15 +73,21 @@ def _appdata_dir() -> Path:
 
 
 def _setup_logging():
+    handlers = []
     if _FROZEN:
         d = _appdata_dir()
         d.mkdir(parents=True, exist_ok=True)
-        handlers = [logging.FileHandler(d / "stt_local.log", encoding="utf-8")]
+        handlers.append(logging.FileHandler(d / "stt_local.log", encoding="utf-8"))
     else:
-        handlers = [
-            logging.StreamHandler(sys.stdout),
-            logging.FileHandler("stt_local.log", encoding="utf-8"),
-        ]
+        # 控制台可能没有（pythonw）或编码为 GBK，尽量切到 UTF-8
+        stream = sys.stdout or sys.stderr
+        if stream is not None:
+            try:
+                stream.reconfigure(encoding="utf-8", errors="replace")
+            except Exception:
+                pass
+            handlers.append(logging.StreamHandler(stream))
+        handlers.append(logging.FileHandler("stt_local.log", encoding="utf-8"))
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s [%(levelname)s] %(message)s",
@@ -95,17 +102,48 @@ def _default_config() -> dict:
         "modifier": "left_ctrl",
         "auto_send": False,
         "ui_language": "zh",
+        "backend": "local",
         "whisper": {
             "model": "base",
             "language": "zh",
             "device": "cuda" if has_cuda else "cpu",
             "compute_type": "float16" if has_cuda else "int8",
         },
+        "api": {
+            "provider": DEFAULT_PROVIDER,
+            "base_url": "https://api.siliconflow.cn/v1",
+            "api_key": "",
+            "model": DEFAULT_MODEL,
+            "language": "zh",
+        },
         "audio": {
             "sample_rate": 16000,
             "device": None,
         },
     }
+
+
+def _build_transcriber(cfg: dict, logger):
+    """根据配置选择本地或云端后端，两者接口一致。"""
+    backend = cfg.get("backend", "local")
+    if backend == "api":
+        api = cfg.get("api", {}) or {}
+        logger.info("使用云端 API 后端：%s / %s",
+                    api.get("base_url", ""), api.get("model", ""))
+        return ApiTranscriber(
+            base_url=api.get("base_url", ""),
+            api_key=api.get("api_key", ""),
+            model=api.get("model", DEFAULT_MODEL),
+            language=api.get("language", "zh"),
+        )
+    w = cfg.get("whisper", {}) or {}
+    logger.info("使用本地 faster-whisper 后端：%s", w.get("model", "base"))
+    return Transcriber(
+        model=w.get("model", "base"),
+        language=w.get("language", "zh"),
+        device=w.get("device", "cpu"),
+        compute_type=w.get("compute_type", "int8"),
+    )
 
 
 def _get_config_path() -> Path:
@@ -150,15 +188,9 @@ def _main(logger):
         sys.exit(1)
 
     cfg = load_config(config_path)
-    w = cfg.get("whisper", {})
     a = cfg.get("audio", {})
 
-    transcriber = Transcriber(
-        model=w.get("model", "base"),
-        language=w.get("language", "zh"),
-        device=w.get("device", "cpu"),
-        compute_type=w.get("compute_type", "int8"),
-    )
+    transcriber = _build_transcriber(cfg, logger)
     transcriber.load_async()
 
     recorder = AudioRecorder(
@@ -220,9 +252,11 @@ def _main(logger):
         if old_cfg.get("ui_language") != new_cfg.get("ui_language"):
             tray.update_language(new_cfg.get("ui_language", "zh"))
 
-        if old_cfg.get("whisper") != new_cfg.get("whisper"):
+        if (old_cfg.get("backend") != new_cfg.get("backend")
+                or old_cfg.get("api") != new_cfg.get("api")
+                or old_cfg.get("whisper") != new_cfg.get("whisper")):
             try:
-                tray._icon.notify("STT", "Whisper 参数已保存，重启后生效。")
+                tray._icon.notify("STT", "识别参数已保存，重启后生效。")
             except Exception:
                 pass
 

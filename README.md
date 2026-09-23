@@ -6,13 +6,14 @@
 
 ## 中文
 
-本地运行的 Push-to-Talk 语音转文字工具。按住快捷键说话，松开后文字自动粘贴到当前输入框。基于 [faster-whisper](https://github.com/SYSTRAN/faster-whisper)，支持 GPU 加速，完全离线运行。
+Push-to-Talk 语音转文字工具。按住快捷键说话，松开后文字自动粘贴到当前输入框。支持两种后端：基于 [faster-whisper](https://github.com/SYSTRAN/faster-whisper) 的**本地离线模式**（可选 GPU 加速），以及 **OpenAI 兼容的云端 API 模式**（无需下载模型、无需显卡）。
 
 ### 功能特性
 
 - **Push-to-Talk**：按住快捷键开始录音，松开后自动转写并粘贴文字
 - **系统托盘图标**：三种状态实时显示——待命（绿）、录音中（红）、转录中（蓝）
 - **GPU 加速**：支持 NVIDIA CUDA，RTX 系列显卡可将转写速度提升 6 倍以上
+- **云端 API 模式**：可切换 OpenAI 兼容的云端 STT（如硅基流动），无需下载模型与显卡；界面实时显示模型**参考价**，并可**查询账户余额**
 - **高精度转写**：使用 Whisper 模型（tiny / base / small / medium / large-v3 可选），支持中文、英文、日文及自动语言检测
 - **自动断句**：在合适位置添加逗号、句号、问号等标点符号
 - **图形设置界面**：右键托盘图标打开设置，支持中英文界面切换
@@ -60,6 +61,28 @@
 | 麦克风 | 选择录音设备，默认使用系统麦克风 |
 | 界面语言 | 中文 / English |
 
+### 云端 API 模式（可选）
+
+除了本地 faster-whisper，还可以切换到**云端 STT API**——无需下载模型、无需显卡：
+
+1. 右键托盘图标 → **设置** → **云端 API**
+2. **识别后端** 选择「云端 API」
+3. **平台预设** 选择「硅基流动 SiliconFlow」（已预填 Base URL 和模型）
+4. 粘贴你的 **API Key**
+5. 点 **保存**，然后重启程序
+
+界面会实时显示当前模型的**参考价**，并可点「查询余额」查看账户额度（目前硅基流动支持，其他平台会自动降级提示）。
+
+任何 **OpenAI 兼容** 的平台都可以用：把「平台预设」切到「自定义」，填入该平台的 Base URL、API Key 和模型名即可。
+
+| 平台 | Base URL | 推荐模型 |
+|------|----------|---------|
+| 硅基流动 | `https://api.siliconflow.cn/v1` | `FunAudioLLM/SenseVoiceSmall` |
+| OpenAI | `https://api.openai.com/v1` | `whisper-1` / `gpt-4o-mini-transcribe` |
+| Groq | `https://api.groq.com/openai/v1` | `whisper-large-v3-turbo` |
+
+> ⚠️ API Key 以**明文**保存在 `config.yaml` 中，请注意不要泄露或提交到仓库。
+
 ### 配置文件位置
 
 安装版：`%APPDATA%\stt_local\config.yaml`  
@@ -68,12 +91,19 @@
 ### 从源码运行
 
 ```bash
-# 安装依赖
+# 仅使用云端 API（轻量，不含 faster-whisper）
+pip install -r requirements-api.txt
+
+# 或安装包含本地 faster-whisper 的完整依赖
 pip install -r requirements.txt
 
 # 运行
 python main.py
 ```
+
+> Windows 用户也可直接双击 `start_stt.bat`（静默启动，无控制台）或 `debug_stt.bat`（带控制台，便于排查）。
+
+> Windows 中文环境下若 `pip` 读 requirements 报编码错误，请用 ASCII 版依赖文件（仓库内已是纯英文注释）。
 
 ### 重新打包
 
@@ -88,13 +118,14 @@ python main.py
 
 <a name="english"></a>
 
-A local push-to-talk speech-to-text tool. Hold a hotkey to record, release to transcribe — text is automatically pasted into the active input field. Powered by [faster-whisper](https://github.com/SYSTRAN/faster-whisper), supports GPU acceleration, runs fully offline.
+A push-to-talk speech-to-text tool. Hold a hotkey to record, release to transcribe — text is automatically pasted into the active input field. Two backends: **local offline** via [faster-whisper](https://github.com/SYSTRAN/faster-whisper) (optional GPU acceleration), or a **cloud OpenAI-compatible API** (no model download, no GPU).
 
 ### Features
 
 - **Push-to-Talk**: Hold hotkey to record, release to transcribe and paste
 - **System Tray Icon**: Three real-time states — idle (green), recording (red), processing (blue)
 - **GPU Acceleration**: NVIDIA CUDA support, 6× faster transcription on RTX GPUs
+- **Cloud API Mode**: Optional OpenAI-compatible cloud STT (e.g. SiliconFlow) — no model download or GPU; shows live model **reference pricing** and can **query account balance**
 - **High-accuracy Transcription**: Whisper models (tiny / base / small / medium / large-v3), supports Chinese, English, Japanese, and auto language detection
 - **Auto Punctuation**: Inserts commas, periods, question marks at appropriate positions
 - **Settings GUI**: Right-click tray icon to open settings, with Chinese/English UI toggle
@@ -142,6 +173,28 @@ Without a GPU or CUDA, the app runs in CPU mode with `int8` precision by default
 | Microphone | Select recording device |
 | UI Language | 中文 / English |
 
+### Cloud API Mode (Optional)
+
+Besides the local faster-whisper backend, you can switch to a **cloud STT API** — no model download, no GPU required:
+
+1. Right-click the tray icon → **Settings** → **Cloud API**
+2. Set **Backend** to **Cloud API**
+3. Pick **Provider** = `SiliconFlow` (Base URL and model are prefilled)
+4. Paste your **API Key**
+5. **Save**, then restart the app
+
+The UI shows the model's **reference pricing** live, and a **Refresh** button queries your account balance (supported by SiliconFlow; other providers degrade gracefully).
+
+Any **OpenAI-compatible** provider works: choose `Custom` and fill in the provider's Base URL, API Key and model name.
+
+| Provider | Base URL | Recommended model |
+|----------|----------|-------------------|
+| SiliconFlow | `https://api.siliconflow.cn/v1` | `FunAudioLLM/SenseVoiceSmall` |
+| OpenAI | `https://api.openai.com/v1` | `whisper-1` / `gpt-4o-mini-transcribe` |
+| Groq | `https://api.groq.com/openai/v1` | `whisper-large-v3-turbo` |
+
+> ⚠️ The API Key is stored in **plain text** in `config.yaml` — keep this file private.
+
 ### Config File Location
 
 Installed: `%APPDATA%\stt_local\config.yaml`  
@@ -150,9 +203,17 @@ Development: `config.yaml` in project root
 ### Run from Source
 
 ```bash
+# Cloud-API-only (lightweight, no faster-whisper)
+pip install -r requirements-api.txt
+
+# Or the full set including the local faster-whisper backend
 pip install -r requirements.txt
+
+# Run
 python main.py
 ```
+
+> On Windows you can also double-click `start_stt.bat` (silent) or `debug_stt.bat` (with console for troubleshooting).
 
 ### Rebuild Installer
 
@@ -168,22 +229,26 @@ main.py              Entry point, wires all modules together
 stt/
   hotkey.py          Global keyboard hook (pynput WH_KEYBOARD_LL)
   recorder.py        Microphone input streaming (sounddevice)
-  transcriber.py     faster-whisper wrapper with VAD filter
+  transcriber.py     faster-whisper wrapper with VAD filter (lazy import)
+  api_transcriber.py Cloud (OpenAI-compatible) backend + presets + pricing/balance
   injector.py        Clipboard-based text injection (Ctrl+V)
   tray.py            System tray icon with state-based icons (pystray + Pillow)
-  settings.py        tkinter settings GUI, 4-tab layout
+  settings.py        tkinter settings GUI, 5-tab layout
 ```
 
 ### Dependencies
 
 | Package | Purpose |
 |---------|---------|
-| faster-whisper | Speech-to-text transcription |
+| faster-whisper | Local speech-to-text transcription (optional in API mode) |
+| requests | Cloud API calls + balance query |
+| numpy | Audio buffer handling |
 | sounddevice | Microphone audio capture |
 | pynput | Global keyboard hook |
 | pystray | Windows system tray |
 | Pillow | Tray icon rendering |
 | PyYAML | Config file read/write |
+| pywin32 | Clipboard injection |
 
 ### License
 

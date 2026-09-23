@@ -1,4 +1,3 @@
-from faster_whisper import WhisperModel
 import numpy as np
 import threading
 import logging
@@ -19,12 +18,14 @@ class Transcriber:
         self._language = language if language != "auto" else None
         self._device = device
         self._compute_type = compute_type
-        self._model: Optional[WhisperModel] = None
+        self._model = None
         self._ready = threading.Event()
 
     def load_async(self):
         def _load():
             try:
+                # 惰性导入：纯云端 API 模式无需安装 faster-whisper
+                from faster_whisper import WhisperModel
                 logger.info(f"Loading Whisper model '{self._model_size}'...")
                 self._model = WhisperModel(
                     self._model_size,

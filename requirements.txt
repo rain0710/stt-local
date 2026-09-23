@@ -1,5 +1,16 @@
-faster-whisper
+# -- Cloud API backend --
+requests
+PyYAML
+
+# -- Audio / hotkey / tray (needed by both backends) --
+numpy
 sounddevice
 pynput
 pystray
 Pillow
+pywin32
+
+# -- Local faster-whisper backend --
+# Optional. Skip if you only use the cloud API backend
+# (see requirements-api.txt for the lightweight set).
+faster-whisper

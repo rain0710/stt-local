@@ -1,0 +1,10 @@
+# Minimal deps for cloud-API-only mode (no faster-whisper / ctranslate2).
+# Install: pip install -r requirements-api.txt
+requests
+PyYAML
+numpy
+sounddevice
+pynput
+pystray
+Pillow
+pywin32
